@@ -141,10 +141,6 @@
                 ><i class="mr-3 fas fa-bicycle"></i> Ebike Models</a
               >
             </li>
-          </ul>
-        </nav>
-
-        
             <li>
               <a
                 href="{% url 'AdminStaff' %}"
@@ -153,6 +149,8 @@
                 <i class="mr-3 fas fa-user-shield"></i> Staff
               </a>
             </li>
+          </ul>
+        </nav>
 
         <div class="p-4 border-t border-blue-600">
           <a
@@ -166,7 +164,7 @@
 
     <div
       id="overlay"
-      class="fixed inset-0 z-40 hidden bg-opacity-40"
+      class="fixed inset-0 z-40 hidden "
       style="display: none"
     ></div>
 
@@ -294,7 +292,7 @@
     <!-- PAYMENT MODAL -->
     <div
       id="paymentModal"
-      class="fixed inset-0 z-[999] flex items-center justify-center bg-opacity-40 drop-shadow-2xl hidden"
+      class="fixed inset-0 z-[999] flex items-center justify-center drop-shadow-2xl hidden"
     >
       <div
         class="bg-white w-[90%] max-w-3xl rounded-lg shadow-xl overflow-hidden"
@@ -376,7 +374,7 @@
     <!-- SUCCESS MODAL -->
     <div
       id="success-modal"
-      class="hidden fixed inset-0 flex items-center justify-center z-[1100] p-4 bg-opacity-40"
+      class="hidden fixed inset-0 flex items-center justify-center z-[1100] p-4"
     >
       <div
         class="w-full max-w-sm p-8 text-center bg-white shadow-2xl rounded-2xl"
