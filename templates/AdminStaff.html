@@ -1,0 +1,805 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EcoDrive Admin - Staff Management</title>
+    <link rel="stylesheet" href="{% static 'dist/output.css' %}" />
+    <script src="https://kit.fontawesome.com/414b0df42d.js" crossorigin="anonymous"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Audiowide&display=swap" rel="stylesheet" />
+    <style>
+      .font-audiowide { font-family: "Audiowide", sans-serif; }
+      .sidebar { transition: transform 0.3s ease-in-out; }
+      .sidebar-open { transform: translateX(0); }
+      .sidebar-closed { transform: translateX(-100%); }
+
+      .modern-table { border-collapse: separate; border-spacing: 0; }
+      .modern-table thead th {
+        background: linear-gradient(to bottom, #f8fafc, #f1f5f9);
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        color: #475569;
+        padding: 1rem 1.5rem;
+        border-bottom: 2px solid #e2e8f0;
+      }
+      .modern-table tbody tr {
+        transition: background-color 0.2s ease;
+        border-bottom: 1px solid #f1f5f9;
+      }
+      .modern-table tbody tr:hover { background-color: #f8fafc; }
+      .modern-table tbody td {
+        padding: 1.25rem 1.5rem;
+        color: #334155;
+        font-size: 0.9rem;
+      }
+      .modern-table tbody tr:last-child { border-bottom: none; }
+
+      /* Modal animation */
+      .modal-backdrop {
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+      .modal-backdrop.show { opacity: 1; }
+      .modal-box {
+        transform: scale(0.95) translateY(-10px);
+        transition: transform 0.2s ease, opacity 0.2s ease;
+        opacity: 0;
+      }
+      .modal-box.show { transform: scale(1) translateY(0); opacity: 1; }
+
+      /* Password strength */
+      .strength-bar { height: 4px; border-radius: 2px; transition: width 0.3s ease, background-color 0.3s ease; }
+    </style>
+  </head>
+
+  <body class="flex flex-col min-h-screen overflow-x-hidden bg-gray-100">
+
+    <!-- ========== SIDEBAR ========== -->
+    <aside id="sidebar" class="fixed top-0 left-0 z-50 w-64 h-full bg-blue-700 shadow-2xl sidebar sidebar-closed">
+      <div class="flex flex-col h-full">
+        <div class="flex items-center justify-between p-4 border-b border-blue-600">
+          <h2 class="text-xl font-bold text-white font-audiowide">Admin Dashboard</h2>
+          <button id="closeSidebar" class="text-white hover:text-gray-200">✕</button>
+        </div>
+        <nav class="flex-1 p-4 overflow-y-auto">
+          <ul class="space-y-2">
+            <li>
+              <a href="{% url 'Homepage' %}" class="flex items-center p-3 text-white rounded-lg hover:bg-blue-600">
+                <i class="mr-3 fas fa-home"></i> Home
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'Adminloanslist' %}" class="flex items-center p-3 text-white rounded-lg hover:bg-blue-600">
+                <i class="mr-3 fas fa-hand-holding-usd"></i> Loans
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'Adminpayment' %}" class="flex items-center p-3 text-white rounded-lg hover:bg-blue-600">
+                <i class="mr-3 fas fa-credit-card"></i> Payments
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'Adminborrower' %}" class="flex items-center p-3 text-white rounded-lg hover:bg-blue-600">
+                <i class="mr-3 fas fa-users"></i> Borrowers
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'AdminEbike' %}" class="flex items-center p-3 text-white rounded-lg hover:bg-blue-600">
+                <i class="mr-3 fas fa-bicycle"></i> Ebike Models
+              </a>
+            </li>
+            <li>
+              <a href="{% url 'AdminStaff' %}" class="flex items-center p-3 text-lg font-bold text-yellow-200 rounded-lg hover:bg-blue-600">
+                <i class="mr-3 fas fa-user-shield"></i> Staff
+              </a>
+            </li>
+          </ul>
+        </nav>
+        <div class="p-4 border-t border-blue-600">
+          <a href="{% url 'index' %}" class="flex items-center p-3 text-white rounded-lg hover:bg-blue-600">
+            <i class="mr-3 fas fa-sign-out-alt"></i> Logout
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <div id="overlay" class="fixed inset-0 z-40 hidden bg-black bg-opacity-40"></div>
+
+    <!-- ========== HEADER ========== -->
+    <header class="w-full px-4 py-3 text-white bg-blue-600 shadow-lg font-audiowide">
+      <div class="flex items-center">
+        <button id="hamburger" class="text-2xl text-white hover:text-gray-300">☰</button>
+        <img src="{% static 'images/logo.png' %}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" class="h-8 ml-3" />
+        <span class="hidden ml-2 text-xl font-bold">ECODRIVE</span>
+        <i class="ml-auto text-2xl cursor-pointer fas fa-user-circle hover:text-gray-300"></i>
+      </div>
+    </header>
+
+    <!-- ========== MAIN CONTENT ========== -->
+    <main class="px-6 py-6">
+      <h1 class="mb-4 text-2xl font-bold text-gray-700">Staff Management</h1>
+
+
+
+      <!-- Add Staff Button -->
+      <button id="openAddModal"
+        class="flex items-center gap-2 px-5 py-2 mb-4 font-bold text-white bg-blue-500 rounded-lg shadow hover:bg-blue-600">
+        <i class="text-xl fas fa-plus-circle"></i>
+        Add Staff
+      </button>
+
+      <!-- Table Card -->
+      <div class="p-4 bg-white shadow rounded-xl">
+        <!-- Table Controls -->
+        <div class="flex flex-col gap-4 mb-4 md:flex-row md:items-center md:justify-between">
+          <div class="flex items-center gap-2 text-gray-700">
+            <span class="font-semibold">Show</span>
+            <select id="entriesSelect" class="px-2 py-1 text-gray-700 border border-gray-400 rounded">
+              <option value="5">5</option>
+              <option value="10" selected>10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+            </select>
+            <span class="font-semibold">entries</span>
+          </div>
+          <div class="relative flex items-center gap-2">
+            <label class="font-semibold text-gray-700">Search:</label>
+            <div class="relative">
+              <input id="searchInput" type="text"
+                class="w-48 py-1 pl-3 pr-8 text-black border rounded focus:ring focus:ring-blue-300"
+                placeholder="Search staff..." />
+              <i class="absolute text-gray-500 -translate-y-1/2 fas fa-search right-3 top-1/2"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto">
+          <table class="w-full modern-table">
+            <thead>
+              <tr>
+                <th class="text-left">#</th>
+                <th class="text-left">Name</th>
+                <th class="text-left">Username</th>
+                <th class="text-left">Email</th>
+                <th class="text-left">Role</th>
+                <th class="text-left">Status</th>
+                <th class="text-left">Date Added</th>
+                <th class="text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="staffTableBody">
+              <!-- Rows injected by JS -->
+            </tbody>
+          </table>
+          <p id="noDataMsg" class="hidden py-8 text-center text-gray-400">No staff members found.</p>
+        </div>
+
+        <!-- Pagination -->
+        <div class="flex flex-col items-center justify-between gap-2 mt-4 text-sm text-gray-600 sm:flex-row">
+          <p id="paginationInfo">Showing 0 to 0 of 0 entries</p>
+          <div class="flex gap-1" id="paginationBtns"></div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ========== ADD / EDIT STAFF MODAL ========== -->
+    <div id="staffModal" class="fixed inset-0 flex items-center justify-center hidden z-60 modal-backdrop">
+      <div class="absolute inset-0 bg-black bg-opacity-50" id="modalOverlay"></div>
+      <div class="relative z-10 w-full max-w-lg mx-4 bg-white shadow-2xl modal-box rounded-2xl">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between p-5 bg-blue-600 border-b border-gray-200 rounded-t-2xl">
+          <h2 class="text-lg font-bold text-white" id="modalTitle">Add New Staff</h2>
+          <button id="closeModal" class="text-white hover:text-gray-200">
+            <i class="text-xl fas fa-times"></i>
+          </button>
+        </div>
+        <!-- Modal Body -->
+        <div class="p-6 overflow-y-auto max-h-[75vh]">
+          <form id="staffForm" class="space-y-4">
+            <input type="hidden" id="staffId" />
+
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <!-- First Name -->
+              <div>
+                <label class="block mb-1 text-sm font-semibold text-gray-700">First Name <span class="text-red-500">*</span></label>
+                <input type="text" id="firstName"
+                  class="w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl text-gray-800 focus:border-blue-500 focus:outline-none transition-all"
+                  placeholder="Juan" required />
+              </div>
+              <!-- Last Name -->
+              <div>
+                <label class="block mb-1 text-sm font-semibold text-gray-700">Last Name <span class="text-red-500">*</span></label>
+                <input type="text" id="lastName"
+                  class="w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl text-gray-800 focus:border-blue-500 focus:outline-none transition-all"
+                  placeholder="Dela Cruz" required />
+              </div>
+            </div>
+
+            <!-- Username -->
+            <div>
+              <label class="block mb-1 text-sm font-semibold text-gray-700">Username <span class="text-red-500">*</span></label>
+              <input type="text" id="username"
+                class="w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl text-gray-800 focus:border-blue-500 focus:outline-none transition-all"
+                placeholder="juan.delacruz" required />
+            </div>
+
+            <!-- Email -->
+            <div>
+              <label class="block mb-1 text-sm font-semibold text-gray-700">Email Address <span class="text-red-500">*</span></label>
+              <input type="email" id="email"
+                class="w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl text-gray-800 focus:border-blue-500 focus:outline-none transition-all"
+                placeholder="juan@ecodrive.com" required />
+            </div>
+
+            <!-- Phone -->
+            <div>
+              <label class="block mb-1 text-sm font-semibold text-gray-700">Phone Number</label>
+              <input type="text" id="phone"
+                class="w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl text-gray-800 focus:border-blue-500 focus:outline-none transition-all"
+                placeholder="09XXXXXXXXX" />
+            </div>
+
+            <!-- Role -->
+            <div>
+              <label class="block mb-1 text-sm font-semibold text-gray-700">Role <span class="text-red-500">*</span></label>
+              <select id="role"
+                class="w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl text-gray-800 focus:border-blue-500 focus:outline-none transition-all" required>
+                <option value="" disabled selected>Select role...</option>
+                <option value="Loan Officer">Loan Officer</option>
+                <option value="Cashier">Cashier</option>
+                <option value="Field Agent">Field Agent</option>
+                <option value="Supervisor">Supervisor</option>
+                <option value="Data Encoder">Data Encoder</option>
+              </select>
+            </div>
+
+            <!-- Status -->
+            <div>
+              <label class="block mb-1 text-sm font-semibold text-gray-700">Status</label>
+              <select id="status"
+                class="w-full px-4 py-2.5 border-2 border-gray-300 rounded-xl text-gray-800 focus:border-blue-500 focus:outline-none transition-all">
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
+
+            <!-- Password (only shown when adding) -->
+            <div id="passwordSection">
+              <label class="block mb-1 text-sm font-semibold text-gray-700">Password <span class="text-red-500">*</span></label>
+              <div class="relative flex items-center transition-all border-2 border-gray-300 rounded-xl focus-within:border-blue-500">
+                <input type="password" id="password"
+                  class="flex-1 px-4 py-2.5 bg-transparent text-gray-800 focus:outline-none rounded-xl"
+                  placeholder="Min. 8 characters" minlength="8" />
+                <button type="button" onclick="toggleVis('password', 'passIcon')" class="px-3 text-gray-400 hover:text-gray-600">
+                  <i id="passIcon" class="fas fa-eye"></i>
+                </button>
+              </div>
+              <!-- Strength Bar -->
+              <div class="mt-2">
+                <div class="w-full h-1 bg-gray-200 rounded">
+                  <div id="strengthBar" class="bg-gray-300 strength-bar" style="width:0%"></div>
+                </div>
+                <p id="strengthText" class="mt-1 text-xs text-gray-400"></p>
+              </div>
+            </div>
+
+            <!-- Confirm Password (only shown when adding) -->
+            <div id="confirmPasswordSection">
+              <label class="block mb-1 text-sm font-semibold text-gray-700">Confirm Password <span class="text-red-500">*</span></label>
+              <div class="relative flex items-center transition-all border-2 border-gray-300 rounded-xl focus-within:border-blue-500">
+                <input type="password" id="confirmPassword"
+                  class="flex-1 px-4 py-2.5 bg-transparent text-gray-800 focus:outline-none rounded-xl"
+                  placeholder="Retype password" minlength="8" />
+                <button type="button" onclick="toggleVis('confirmPassword', 'confirmIcon')" class="px-3 text-gray-400 hover:text-gray-600">
+                  <i id="confirmIcon" class="fas fa-eye"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Error message -->
+            <p id="formError" class="hidden text-sm font-medium text-red-600"></p>
+          </form>
+        </div>
+        <!-- Modal Footer -->
+        <div class="flex justify-end gap-3 px-6 py-4 border-t border-gray-200">
+          <button id="cancelModal"
+            class="px-5 py-2 font-semibold text-gray-700 transition-all bg-gray-100 rounded-xl hover:bg-gray-200">
+            Cancel
+          </button>
+          <button id="saveStaff"
+            class="px-5 py-2 font-semibold text-white transition-all bg-blue-600 shadow rounded-xl hover:bg-blue-700">
+            <i class="mr-1 fas fa-save"></i> Save Staff
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== VIEW STAFF MODAL ========== -->
+    <div id="viewModal" class="fixed inset-0 flex items-center justify-center hidden z-60 modal-backdrop">
+      <div class="absolute inset-0 bg-black bg-opacity-50" id="viewModalOverlay"></div>
+      <div class="relative z-10 w-full max-w-md mx-4 bg-white shadow-2xl modal-box rounded-2xl">
+        <div class="flex items-center justify-between p-5 bg-blue-600 border-b rounded-t-2xl">
+          <h2 class="text-lg font-bold text-white">Staff Details</h2>
+          <button id="closeViewModal" class="text-white hover:text-gray-200"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="p-6">
+          <!-- Avatar -->
+          <div class="flex flex-col items-center mb-5">
+            <div class="flex items-center justify-center w-20 h-20 text-3xl font-bold text-white bg-blue-500 rounded-full shadow" id="viewAvatar">JD</div>
+            <h3 class="mt-3 text-xl font-bold text-gray-800" id="viewName">Juan Dela Cruz</h3>
+            <span id="viewRoleBadge" class="px-3 py-1 mt-1 text-xs font-semibold text-blue-700 bg-blue-100 rounded-full">Loan Officer</span>
+          </div>
+          <!-- Info Grid -->
+          <div class="space-y-3 text-sm text-gray-700">
+            <div class="flex justify-between py-2 border-b border-gray-100">
+              <span class="font-semibold text-gray-500">Username</span>
+              <span id="viewUsername" class="font-medium">—</span>
+            </div>
+            <div class="flex justify-between py-2 border-b border-gray-100">
+              <span class="font-semibold text-gray-500">Email</span>
+              <span id="viewEmail" class="font-medium">—</span>
+            </div>
+            <div class="flex justify-between py-2 border-b border-gray-100">
+              <span class="font-semibold text-gray-500">Phone</span>
+              <span id="viewPhone" class="font-medium">—</span>
+            </div>
+            <div class="flex justify-between py-2 border-b border-gray-100">
+              <span class="font-semibold text-gray-500">Status</span>
+              <span id="viewStatus" class="font-medium">—</span>
+            </div>
+            <div class="flex justify-between py-2">
+              <span class="font-semibold text-gray-500">Date Added</span>
+              <span id="viewDate" class="font-medium">—</span>
+            </div>
+          </div>
+        </div>
+        <div class="flex justify-end gap-3 px-6 py-4 border-t border-gray-200">
+          <button id="viewEditBtn" class="px-5 py-2 font-semibold text-white transition-all bg-blue-600 rounded-xl hover:bg-blue-700">
+            <i class="mr-1 fas fa-edit"></i> Edit
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== DELETE CONFIRM MODAL ========== -->
+    <div id="deleteModal" class="fixed inset-0 flex items-center justify-center hidden z-60 modal-backdrop">
+      <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+      <div class="relative z-10 w-full max-w-sm p-6 mx-4 text-center bg-white shadow-2xl modal-box rounded-2xl">
+        <div class="flex items-center justify-center mx-auto mb-4 bg-red-100 rounded-full w-14 h-14">
+          <i class="text-2xl text-red-500 fas fa-trash-alt"></i>
+        </div>
+        <h3 class="mb-2 text-xl font-bold text-gray-800">Remove Staff?</h3>
+        <p class="mb-6 text-gray-500">Are you sure you want to remove <span id="deleteStaffName" class="font-semibold text-gray-800"></span>? This action cannot be undone.</p>
+        <div class="flex justify-center gap-3">
+          <button id="cancelDelete" class="px-5 py-2 font-semibold text-gray-700 transition-all bg-gray-100 rounded-xl hover:bg-gray-200">Cancel</button>
+          <button id="confirmDelete" class="px-5 py-2 font-semibold text-white transition-all bg-red-500 rounded-xl hover:bg-red-600">Yes, Remove</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== RESET PASSWORD MODAL ========== -->
+    <div id="resetModal" class="fixed inset-0 flex items-center justify-center hidden z-60 modal-backdrop">
+      <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+      <div class="relative z-10 w-full max-w-sm mx-4 bg-white shadow-2xl modal-box rounded-2xl">
+        <div class="flex items-center justify-between p-5 bg-yellow-500 border-b rounded-t-2xl">
+          <h2 class="text-lg font-bold text-white">Reset Password</h2>
+          <button id="closeResetModal" class="text-white hover:text-yellow-100"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="p-6 space-y-4">
+          <p class="text-sm text-gray-600">Set a new password for <span id="resetStaffName" class="font-semibold text-gray-800"></span>.</p>
+          <input type="hidden" id="resetStaffId" />
+          <div>
+            <label class="block mb-1 text-sm font-semibold text-gray-700">New Password</label>
+            <div class="relative flex items-center transition-all border-2 border-gray-300 rounded-xl focus-within:border-yellow-500">
+              <input type="password" id="newResetPassword"
+                class="flex-1 px-4 py-2.5 bg-transparent text-gray-800 focus:outline-none"
+                placeholder="Min. 8 characters" minlength="8" />
+              <button type="button" onclick="toggleVis('newResetPassword', 'resetPassIcon')" class="px-3 text-gray-400 hover:text-gray-600">
+                <i id="resetPassIcon" class="fas fa-eye"></i>
+              </button>
+            </div>
+          </div>
+          <p id="resetError" class="hidden text-sm font-medium text-red-600"></p>
+        </div>
+        <div class="flex justify-end gap-3 px-6 py-4 border-t border-gray-200">
+          <button id="cancelReset" class="px-5 py-2 font-semibold text-gray-700 transition-all bg-gray-100 rounded-xl hover:bg-gray-200">Cancel</button>
+          <button id="confirmReset" class="px-5 py-2 font-semibold text-white transition-all bg-yellow-500 rounded-xl hover:bg-yellow-600">
+            <i class="mr-1 fas fa-key"></i> Reset
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== JAVASCRIPT ========== -->
+    <script>
+      // ========== SIDEBAR ==========
+      const hamburger = document.getElementById("hamburger");
+      const sidebar = document.getElementById("sidebar");
+      const overlay = document.getElementById("overlay");
+      const closeSidebarBtn = document.getElementById("closeSidebar");
+
+      function openSidebar() {
+        sidebar.classList.remove("sidebar-closed");
+        sidebar.classList.add("sidebar-open");
+        overlay.classList.remove("hidden");
+        document.body.style.overflow = "hidden";
+      }
+      function closeSidebarFunc() {
+        sidebar.classList.add("sidebar-closed");
+        sidebar.classList.remove("sidebar-open");
+        overlay.classList.add("hidden");
+        document.body.style.overflow = "";
+      }
+      hamburger.addEventListener("click", openSidebar);
+      closeSidebarBtn.addEventListener("click", closeSidebarFunc);
+      overlay.addEventListener("click", closeSidebarFunc);
+      document.addEventListener("keydown", e => { if (e.key === "Escape") closeSidebarFunc(); });
+
+      // ========== DATA ==========
+      let staffList = JSON.parse(localStorage.getItem("ecodrive_staff") || "[]");
+      let currentPage = 1;
+      let editingId = null;
+      let deletingId = null;
+
+      // Seed demo data if empty
+      if (staffList.length === 0) {
+        const roles = ["Loan Officer", "Cashier", "Field Agent", "Supervisor", "Data Encoder"];
+        const statuses = ["Active", "Active", "Active", "Inactive", "Active"];
+        const names = [
+          ["Maria", "Santos"], ["Jose", "Reyes"], ["Ana", "Garcia"],
+          ["Carlos", "Mendoza"], ["Luz", "Cruz"]
+        ];
+        names.forEach(([fn, ln], i) => {
+          staffList.push({
+            id: Date.now() + i,
+            firstName: fn,
+            lastName: ln,
+            username: (fn + "." + ln).toLowerCase(),
+            email: (fn + "." + ln).toLowerCase() + "@ecodrive.com",
+            phone: "09" + String(Math.floor(100000000 + Math.random() * 900000000)).slice(0, 9),
+            role: roles[i],
+            status: statuses[i],
+            dateAdded: new Date(Date.now() - i * 86400000 * 5).toLocaleDateString("en-PH"),
+            password: "staff1234"
+          });
+        });
+        saveStaffData();
+      }
+
+      function saveStaffData() {
+        localStorage.setItem("ecodrive_staff", JSON.stringify(staffList));
+        updateStats();
+        renderTable();
+      }
+
+      // ========== STATS ==========
+      function updateStats() {}
+
+      // ========== TABLE RENDER ==========
+      function renderTable() {
+        const search = document.getElementById("searchInput").value.toLowerCase();
+        const perPage = parseInt(document.getElementById("entriesSelect").value);
+        const filtered = staffList.filter(s =>
+          (s.firstName + " " + s.lastName + s.username + s.email + s.role).toLowerCase().includes(search)
+        );
+        const total = filtered.length;
+        const totalPages = Math.max(1, Math.ceil(total / perPage));
+        if (currentPage > totalPages) currentPage = totalPages;
+        const start = (currentPage - 1) * perPage;
+        const pageData = filtered.slice(start, start + perPage);
+
+        const tbody = document.getElementById("staffTableBody");
+        const noData = document.getElementById("noDataMsg");
+
+        tbody.innerHTML = "";
+
+        if (pageData.length === 0) {
+          noData.classList.remove("hidden");
+        } else {
+          noData.classList.add("hidden");
+          pageData.forEach((s, i) => {
+            const initials = (s.firstName[0] + s.lastName[0]).toUpperCase();
+            const colors = ["bg-blue-500","bg-purple-500","bg-teal-500","bg-pink-500","bg-orange-500"];
+            const color = colors[(s.firstName.charCodeAt(0) + s.lastName.charCodeAt(0)) % colors.length];
+            const statusClass = s.status === "Active"
+              ? "bg-green-100 text-green-700"
+              : "bg-yellow-100 text-yellow-700";
+
+            tbody.innerHTML += `
+              <tr>
+                <td class="font-semibold text-gray-400">${start + i + 1}</td>
+                <td>
+                  <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center w-9 h-9 text-xs font-bold text-white ${color} rounded-full shrink-0">${initials}</div>
+                    <div>
+                      <p class="font-semibold text-gray-800">${s.firstName} ${s.lastName}</p>
+                      <p class="text-xs text-gray-400">${s.phone || "—"}</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="text-gray-600">${s.username}</td>
+                <td class="text-gray-600">${s.email}</td>
+                <td>
+                  <span class="px-2 py-1 text-xs font-semibold text-blue-700 bg-blue-100 rounded-full">${s.role}</span>
+                </td>
+                <td>
+                  <span class="px-2 py-1 text-xs font-semibold rounded-full ${statusClass}">${s.status}</span>
+                </td>
+                <td class="text-gray-500">${s.dateAdded}</td>
+                <td>
+                  <div class="flex items-center justify-center gap-2">
+                    <button onclick="viewStaff(${s.id})" class="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition" title="View">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                    <button onclick="editStaff(${s.id})" class="p-1.5 text-yellow-500 hover:bg-yellow-50 rounded-lg transition" title="Edit">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <button onclick="openResetModal(${s.id})" class="p-1.5 text-purple-500 hover:bg-purple-50 rounded-lg transition" title="Reset Password">
+                      <i class="fas fa-key"></i>
+                    </button>
+                    <button onclick="openDeleteModal(${s.id})" class="p-1.5 text-red-400 hover:bg-red-50 rounded-lg transition" title="Remove">
+                      <i class="fas fa-trash-alt"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>`;
+          });
+        }
+
+        // Pagination info
+        document.getElementById("paginationInfo").textContent =
+          total === 0 ? "Showing 0 entries" :
+          `Showing ${start + 1} to ${Math.min(start + perPage, total)} of ${total} entries`;
+
+        // Pagination buttons
+        const btns = document.getElementById("paginationBtns");
+        btns.innerHTML = "";
+        for (let p = 1; p <= totalPages; p++) {
+          const btn = document.createElement("button");
+          btn.textContent = p;
+          btn.className = `px-3 py-1 rounded border font-semibold text-sm transition ${p === currentPage ? "bg-blue-600 text-white border-blue-600" : "text-gray-600 border-gray-300 hover:bg-gray-100"}`;
+          btn.onclick = () => { currentPage = p; renderTable(); };
+          btns.appendChild(btn);
+        }
+      }
+
+      document.getElementById("searchInput").addEventListener("input", () => { currentPage = 1; renderTable(); });
+      document.getElementById("entriesSelect").addEventListener("change", () => { currentPage = 1; renderTable(); });
+
+      // ========== MODAL HELPERS ==========
+      function showModal(id) {
+        const el = document.getElementById(id);
+        el.classList.remove("hidden");
+        requestAnimationFrame(() => {
+          el.classList.add("show");
+          el.querySelector(".modal-box").classList.add("show");
+        });
+      }
+      function hideModal(id) {
+        const el = document.getElementById(id);
+        el.classList.remove("show");
+        el.querySelector(".modal-box").classList.remove("show");
+        setTimeout(() => el.classList.add("hidden"), 200);
+      }
+
+      // ========== ADD / EDIT MODAL ==========
+      function resetForm() {
+        document.getElementById("staffForm").reset();
+        document.getElementById("staffId").value = "";
+        document.getElementById("formError").classList.add("hidden");
+        document.getElementById("passwordSection").classList.remove("hidden");
+        document.getElementById("confirmPasswordSection").classList.remove("hidden");
+        document.getElementById("password").required = true;
+        document.getElementById("confirmPassword").required = true;
+        document.getElementById("strengthBar").style.width = "0%";
+        document.getElementById("strengthText").textContent = "";
+        editingId = null;
+      }
+
+      document.getElementById("openAddModal").onclick = () => {
+        resetForm();
+        document.getElementById("modalTitle").textContent = "Add New Staff";
+        showModal("staffModal");
+      };
+      document.getElementById("closeModal").onclick = () => hideModal("staffModal");
+      document.getElementById("cancelModal").onclick = () => hideModal("staffModal");
+      document.getElementById("modalOverlay").onclick = () => hideModal("staffModal");
+
+      // Password strength
+      document.getElementById("password").addEventListener("input", function () {
+        const val = this.value;
+        const bar = document.getElementById("strengthBar");
+        const txt = document.getElementById("strengthText");
+        let strength = 0;
+        if (val.length >= 8) strength++;
+        if (/[A-Z]/.test(val)) strength++;
+        if (/[0-9]/.test(val)) strength++;
+        if (/[^A-Za-z0-9]/.test(val)) strength++;
+        const levels = [
+          { w: "0%", c: "bg-gray-300", t: "" },
+          { w: "25%", c: "bg-red-400", t: "Weak" },
+          { w: "50%", c: "bg-yellow-400", t: "Fair" },
+          { w: "75%", c: "bg-blue-400", t: "Good" },
+          { w: "100%", c: "bg-green-500", t: "Strong" }
+        ];
+        const lv = levels[strength];
+        bar.style.width = lv.w;
+        bar.className = `strength-bar ${lv.c}`;
+        txt.textContent = lv.t;
+        txt.className = `mt-1 text-xs ${strength <= 1 ? "text-red-400" : strength === 2 ? "text-yellow-500" : "text-green-600"}`;
+      });
+
+      // Save staff
+      document.getElementById("saveStaff").onclick = () => {
+        const firstName = document.getElementById("firstName").value.trim();
+        const lastName = document.getElementById("lastName").value.trim();
+        const username = document.getElementById("username").value.trim();
+        const email = document.getElementById("email").value.trim();
+        const phone = document.getElementById("phone").value.trim();
+        const role = document.getElementById("role").value;
+        const status = document.getElementById("status").value;
+        const password = document.getElementById("password").value;
+        const confirmPassword = document.getElementById("confirmPassword").value;
+        const errorEl = document.getElementById("formError");
+
+        if (!firstName || !lastName || !username || !email || !role) {
+          errorEl.textContent = "Please fill in all required fields.";
+          errorEl.classList.remove("hidden");
+          return;
+        }
+
+        if (editingId === null) {
+          if (!password || password.length < 8) {
+            errorEl.textContent = "Password must be at least 8 characters.";
+            errorEl.classList.remove("hidden");
+            return;
+          }
+          if (password !== confirmPassword) {
+            errorEl.textContent = "Passwords do not match.";
+            errorEl.classList.remove("hidden");
+            return;
+          }
+          // Check duplicate username
+          if (staffList.find(s => s.username === username)) {
+            errorEl.textContent = "Username already exists.";
+            errorEl.classList.remove("hidden");
+            return;
+          }
+          staffList.push({
+            id: Date.now(),
+            firstName, lastName, username, email, phone, role, status,
+            dateAdded: new Date().toLocaleDateString("en-PH"),
+            password
+          });
+        } else {
+          const idx = staffList.findIndex(s => s.id === editingId);
+          if (idx !== -1) {
+            // Check duplicate username (excluding self)
+            if (staffList.find(s => s.username === username && s.id !== editingId)) {
+              errorEl.textContent = "Username already exists.";
+              errorEl.classList.remove("hidden");
+              return;
+            }
+            staffList[idx] = { ...staffList[idx], firstName, lastName, username, email, phone, role, status };
+          }
+        }
+
+        errorEl.classList.add("hidden");
+        saveStaffData();
+        hideModal("staffModal");
+      };
+
+      // ========== EDIT ==========
+      function editStaff(id) {
+        const s = staffList.find(x => x.id === id);
+        if (!s) return;
+        editingId = id;
+        document.getElementById("modalTitle").textContent = "Edit Staff";
+        document.getElementById("staffId").value = id;
+        document.getElementById("firstName").value = s.firstName;
+        document.getElementById("lastName").value = s.lastName;
+        document.getElementById("username").value = s.username;
+        document.getElementById("email").value = s.email;
+        document.getElementById("phone").value = s.phone || "";
+        document.getElementById("role").value = s.role;
+        document.getElementById("status").value = s.status;
+        // Hide password fields for edit
+        document.getElementById("passwordSection").classList.add("hidden");
+        document.getElementById("confirmPasswordSection").classList.add("hidden");
+        document.getElementById("password").required = false;
+        document.getElementById("confirmPassword").required = false;
+        document.getElementById("formError").classList.add("hidden");
+        showModal("staffModal");
+      }
+
+      // ========== VIEW ==========
+      function viewStaff(id) {
+        const s = staffList.find(x => x.id === id);
+        if (!s) return;
+        const initials = (s.firstName[0] + s.lastName[0]).toUpperCase();
+        const colors = ["bg-blue-500","bg-purple-500","bg-teal-500","bg-pink-500","bg-orange-500"];
+        const color = colors[(s.firstName.charCodeAt(0) + s.lastName.charCodeAt(0)) % colors.length];
+        document.getElementById("viewAvatar").textContent = initials;
+        document.getElementById("viewAvatar").className = `flex items-center justify-center w-20 h-20 text-3xl font-bold text-white ${color} rounded-full shadow`;
+        document.getElementById("viewName").textContent = s.firstName + " " + s.lastName;
+        document.getElementById("viewRoleBadge").textContent = s.role;
+        document.getElementById("viewUsername").textContent = s.username;
+        document.getElementById("viewEmail").textContent = s.email;
+        document.getElementById("viewPhone").textContent = s.phone || "—";
+        const statusBadge = s.status === "Active"
+          ? `<span class="px-2 py-0.5 text-xs font-semibold bg-green-100 text-green-700 rounded-full">Active</span>`
+          : `<span class="px-2 py-0.5 text-xs font-semibold bg-yellow-100 text-yellow-700 rounded-full">Inactive</span>`;
+        document.getElementById("viewStatus").innerHTML = statusBadge;
+        document.getElementById("viewDate").textContent = s.dateAdded;
+        document.getElementById("viewEditBtn").onclick = () => { hideModal("viewModal"); editStaff(id); };
+        showModal("viewModal");
+      }
+      document.getElementById("closeViewModal").onclick = () => hideModal("viewModal");
+      document.getElementById("viewModalOverlay").onclick = () => hideModal("viewModal");
+
+      // ========== DELETE ==========
+      function openDeleteModal(id) {
+        const s = staffList.find(x => x.id === id);
+        if (!s) return;
+        deletingId = id;
+        document.getElementById("deleteStaffName").textContent = s.firstName + " " + s.lastName;
+        showModal("deleteModal");
+      }
+      document.getElementById("cancelDelete").onclick = () => hideModal("deleteModal");
+      document.getElementById("confirmDelete").onclick = () => {
+        staffList = staffList.filter(s => s.id !== deletingId);
+        saveStaffData();
+        hideModal("deleteModal");
+      };
+
+      // ========== RESET PASSWORD ==========
+      function openResetModal(id) {
+        const s = staffList.find(x => x.id === id);
+        if (!s) return;
+        document.getElementById("resetStaffId").value = id;
+        document.getElementById("resetStaffName").textContent = s.firstName + " " + s.lastName;
+        document.getElementById("newResetPassword").value = "";
+        document.getElementById("resetError").classList.add("hidden");
+        showModal("resetModal");
+      }
+      document.getElementById("closeResetModal").onclick = () => hideModal("resetModal");
+      document.getElementById("cancelReset").onclick = () => hideModal("resetModal");
+      document.getElementById("confirmReset").onclick = () => {
+        const id = parseInt(document.getElementById("resetStaffId").value);
+        const newPass = document.getElementById("newResetPassword").value;
+        const errorEl = document.getElementById("resetError");
+        if (!newPass || newPass.length < 8) {
+          errorEl.textContent = "Password must be at least 8 characters.";
+          errorEl.classList.remove("hidden");
+          return;
+        }
+        const idx = staffList.findIndex(s => s.id === id);
+        if (idx !== -1) staffList[idx].password = newPass;
+        saveStaffData();
+        hideModal("resetModal");
+      };
+
+      // ========== TOGGLE PASSWORD VIS ==========
+      function toggleVis(inputId, iconId) {
+        const input = document.getElementById(inputId);
+        const icon = document.getElementById(iconId);
+        if (input.type === "password") {
+          input.type = "text";
+          icon.classList.replace("fa-eye", "fa-eye-slash");
+        } else {
+          input.type = "password";
+          icon.classList.replace("fa-eye-slash", "fa-eye");
+        }
+      }
+
+      // ========== INIT ==========
+      updateStats();
+      renderTable();
+    </script>
+  </body>
+</html>
