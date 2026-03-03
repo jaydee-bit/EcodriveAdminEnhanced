@@ -559,13 +559,35 @@
         // Pagination buttons
         const btns = document.getElementById("paginationBtns");
         btns.innerHTML = "";
+
+        // Previous button
+        const prevBtn = document.createElement("button");
+        prevBtn.textContent = "Previous";
+        prevBtn.className = "px-3 py-1 text-black bg-gray-100 border rounded hover:bg-gray-300";
+        prevBtn.disabled = currentPage === 1;
+        if (currentPage === 1) prevBtn.classList.add("opacity-50", "cursor-not-allowed");
+        prevBtn.onclick = () => { if (currentPage > 1) { currentPage--; renderTable(); } };
+        btns.appendChild(prevBtn);
+
+        // Page number buttons
         for (let p = 1; p <= totalPages; p++) {
           const btn = document.createElement("button");
           btn.textContent = p;
-          btn.className = `px-3 py-1 rounded border font-semibold text-sm transition ${p === currentPage ? "bg-blue-600 text-white border-blue-600" : "text-gray-600 border-gray-300 hover:bg-gray-100"}`;
+          btn.className = p === currentPage
+            ? "px-3 py-1 text-white bg-blue-600 border rounded"
+            : "px-3 py-1 text-black bg-gray-100 border rounded hover:bg-gray-300";
           btn.onclick = () => { currentPage = p; renderTable(); };
           btns.appendChild(btn);
         }
+
+        // Next button
+        const nextBtn = document.createElement("button");
+        nextBtn.textContent = "Next";
+        nextBtn.className = "px-3 py-1 text-black bg-gray-100 border rounded hover:bg-gray-300";
+        nextBtn.disabled = currentPage === totalPages;
+        if (currentPage === totalPages) nextBtn.classList.add("opacity-50", "cursor-not-allowed");
+        nextBtn.onclick = () => { if (currentPage < totalPages) { currentPage++; renderTable(); } };
+        btns.appendChild(nextBtn);
       }
 
       document.getElementById("searchInput").addEventListener("input", () => { currentPage = 1; renderTable(); });
